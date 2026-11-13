@@ -1,0 +1,30 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> casa-bocaditos-u3@1.0.0 test
+> npm run build && node --test
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> casa-bocaditos-u3@1.0.0 build
+> vite build && node scripts/build-shell.js
+
+vite v7.3.8 building client environment for production...
+transforming...
+✓ 33 modules transformed.
+rendering chunks...
+computing gzip size...
+../dist/index.html                   0.57 kB │ gzip:  0.34 kB
+../dist/assets/index-B9tTJG2p.css    4.81 kB │ gzip:  1.69 kB
+../dist/assets/index-D0VkQeCq.js   106.70 kB │ gzip: 41.43 kB
+✓ built in 1.34s
+✔ Contrato HTTP, validación, conflictos, SSE, sesiones y persistencia (111.101326ms)
+✔ Interfaz Vue compilada: sesión, CRUD, búsqueda, conflictos y offline (DOM simulado) (541.964419ms)
+✔ Service worker: shell completo, sin intercepción de API ni escrituras (4.007493ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 936.867287

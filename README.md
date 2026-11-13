@@ -1,145 +1,93 @@
-# API de reservas — Casa Bocaditos
+# Casa Bocaditos · Reservas SPA/PWA
 
-Proyecto de Aplicaciones Web, Unidad 2. Permite crear, consultar, actualizar y eliminar reservas de catering.
+Aplicaciones Web, Unidad 3. Yeferson Parra, carrera Software.
+Continuación de la API REST de Unidad 2: Node.js 24, SQLite y SSE.
+Cliente Vue 3 con Vue Router, Vite, componentes y PWA de caché pública limitada.
 
-## Tecnologías
+## Ejecutar en Windows
 
-- Node.js 24 o superior.
-- Servidor HTTP nativo de Node.js.
-- SQLite para persistencia.
-- Server-Sent Events (SSE) para notificaciones en tiempo real.
-- Pruebas con el ejecutor integrado de Node.js.
-
-## Ejecución en Windows
-
-Descargar el repositorio y abrir una ventana de Símbolo del sistema (cmd) en la carpeta que contiene package.json.
-
-Ejecutar:
+Requiere Node.js 24 o superior. Extraer el proyecto y abrir CMD en su carpeta.
 
 ```cmd
-set ADMIN_TOKEN=mi-clave-para-la-tarea-2026
+npm ci
+npm test
+set ADMIN_TOKEN=clave-de-demostracion
 npm start
 ```
 
-La API estará disponible en http://127.0.0.1:3000.
+Abrir **http://127.0.0.1:3000** y escribir la misma clave. Mantener el servidor encendido.
+Alternativa tras compilar: `INICIAR_WINDOWS.bat`.
+`npm test` compila y ejecuta todas las pruebas; `npm run build` solo compila.
+La clave de ejemplo es únicamente para demostración local.
 
-La clave mostrada es de ejemplo para la demostración local.
+## Desarrollo
 
-## Pruebas
+Con la API encendida en 3000, abrir otra CMD y ejecutar `npm run dev`.
+Visitar http://127.0.0.1:5173. Vite redirige `/api` al backend;
+las cookies y SSE conservan el mismo origen para el navegador. No se habilita CORS.
+El service worker solo se registra en la compilación de producción.
+Para probar PWA usar el servidor en 3000, después de `npm run build`.
+La API original ahora sirve `dist/` antes de exigir autenticación a las rutas privadas.
 
-En otra ventana de cmd, dentro de la misma carpeta:
+## Componentes y responsabilidades
 
-```cmd
-npm test
-```
+- `App.vue`: estructura, navegación, estado de red y botón de instalación.
+- `ReservasView.vue`: coordina API, SSE, borradores y operaciones.
+- `LoginForm.vue`: captura clave y emite `login`; no persiste credenciales.
+- `ReservaForm.vue`: copia de la reserva en formulario; emite `save` y `cancel`.
+- `ReservaList.vue`: lista con `:key="reserva.id"`, edición y confirmación de eliminación.
+- `AyudaView.vue`: guía disponible offline.
+- `api.js`: único servicio HTTP; comprueba `response.ok`, interpreta errores y maneja 204.
+- `session.js`: solo comparte el indicador reactivo de sesión; el servidor sigue validando cada petición.
 
-La prueba de integración verifica autenticación, CRUD, validaciones, conflictos, eventos SSE y persistencia tras reiniciar el servidor.
+Las props no se mutan. La vista conserva reservas, carga, éxito, error, búsqueda y borrador.
+Las consultas anteriores se cancelan con AbortController; un contador descarta resultados obsoletos.
+Las escrituras se bloquean mientras otra operación está en curso. SSE consulta de nuevo la lista
+al conectar, al reconectar y al recibir eventos, porque el backend no reproduce eventos pasados.
+Al salir de la vista se cancela la consulta y se cierra EventSource.
 
-## Estructura
+## API
 
-- src/domain.js: validación y normalización.
-- src/repository.js: consultas parametrizadas y persistencia SQLite.
-- src/app.js: rutas HTTP, sesiones y eventos.
-- src/server.js: configuración y arranque.
-- test/api.test.js: prueba de integración.
-- EVIDENCIA.txt: resultado de las pruebas.
-
-## Endpoints
-
-| Método | Ruta | Función |
+| Método | Ruta | Uso |
 |---|---|---|
-| POST | /api/sesion | Iniciar sesión |
-| DELETE | /api/sesion | Cerrar sesión |
-| GET | /api/reservas | Listar reservas |
-| POST | /api/reservas | Crear reserva |
-| GET | /api/reservas/:id | Consultar reserva |
-| PUT | /api/reservas/:id | Actualizar reserva |
-| DELETE | /api/reservas/:id | Eliminar reserva |
-| GET | /api/eventos | Recibir eventos SSE |
+| POST / DELETE | /api/sesion | Entrar / salir |
+| GET / POST | /api/reservas | Listar / crear |
+| GET / PUT / DELETE | /api/reservas/:id | Leer / sustituir / eliminar |
+| GET | /api/eventos | Notificaciones SSE |
 
-Todas las rutas, excepto el inicio de sesión, requieren la cookie de sesión.
+Login JSON: `{"token":"clave-de-demostracion"}`.
+Reserva JSON: `{"cliente":"Ana Pérez","fecha":"2027-02-20","personas":60}`.
+Cliente de 2 a 100 caracteres, fecha válida, invitados enteros de 1 a 1000.
+Una reserva por fecha; conflicto 409. PUT requiere todos los campos.
+Cookie HttpOnly, SameSite=Strict, sesión de 30 minutos. La clave nunca se escribe en almacenamiento local.
+No se envían campos de decoración, precios o menú porque no forman parte del contrato de Unidad 2.
 
-## Ejemplos en Windows (cmd)
+## PWA y caché
 
-Iniciar sesión y guardar la cookie:
+Manifest con nombre, inicio, colores e iconos PNG de 192 y 512.
+El paso de build inserta los nombres reales de JS/CSS en `dist/sw.js`.
+Instalación atómica de toda la interfaz mediante `cache.addAll`.
+HTML: red primero y copia offline si falla; recursos versionados: caché primero.
+Solo se cachean archivos de la interfaz explícitamente incluidos. Nunca se interceptan API,
+SSE, POST, PUT o DELETE; no se guardan respuestas privadas ni reservas. No hay cola offline.
+Al desconectarse se borra la lista visible y se deshabilitan operaciones; se conserva la guía.
+Al reconectarse se consulta al servidor. Cachés antiguas propias se eliminan al activar el nuevo worker.
+Una actualización puede esperar al cierre de las pestañas previas. HTTPS o localhost obligatorio.
+Instalar y usar offline requiere al menos una primera carga completa con conexión.
 
-```cmd
-curl -i -c cookies.txt -H "Content-Type: application/json" -d "{\"token\":\"mi-clave-para-la-tarea-2026\"}" http://127.0.0.1:3000/api/sesion
-```
+## Pruebas y límites
 
-Respuesta: 201 Created y cookie de sesión.
+`npm test` ejecuta la integración real de API, flujos de la interfaz compilada con Happy DOM
+(API simulada) y lógica del service worker mediante VM. No equivale a pruebas en navegador.
+Ver `EVIDENCIA_U3.txt` y `docs/GUIA_EVIDENCIAS.md`.
+No se pudo ejecutar Chromium en el entorno de preparación; quedan pendientes revisión visual,
+instalación real, offline en navegador y accesibilidad manual. No se adjuntan capturas ficticias.
+La demostración es local, sin despliegue público. Antes de entregar, subir los archivos a GitHub,
+revisar el informe y añadir evidencias. No subir base SQLite, cookies, `.env` ni node_modules.
+La API sigue siendo una demostración académica con administrador único y sesiones en memoria.
 
-Crear una reserva:
+## Referencias técnicas
 
-```cmd
-curl -i -b cookies.txt -H "Content-Type: application/json" -d "{\"cliente\":\"Ana Perez\",\"fecha\":\"2027-02-20\",\"personas\":60}" http://127.0.0.1:3000/api/reservas
-```
-
-Ejemplo de respuesta en una base nueva:
-
-```json
-{"data":{"id":1,"cliente":"Ana Perez","fecha":"2027-02-20","personas":60}}
-```
-
-Consultar reservas:
-
-```cmd
-curl -i -b cookies.txt http://127.0.0.1:3000/api/reservas
-```
-
-Actualizar la reserva con ID 1:
-
-```cmd
-curl -i -b cookies.txt -X PUT -H "Content-Type: application/json" -d "{\"cliente\":\"Ana Perez\",\"fecha\":\"2027-02-20\",\"personas\":80}" http://127.0.0.1:3000/api/reservas/1
-```
-
-Eliminarla:
-
-```cmd
-curl -i -b cookies.txt -X DELETE http://127.0.0.1:3000/api/reservas/1
-```
-
-Respuesta: 204 No Content.
-
-## Tiempo real
-
-En otra ventana de cmd, con una sesión activa:
-
-```cmd
-curl -N -b cookies.txt http://127.0.0.1:3000/api/eventos
-```
-
-Las operaciones realizadas después de abrir la conexión generan eventos como:
-
-```text
-event: reserva
-data: {"type":"updated","id":1}
-```
-
-## Validación y errores
-
-Cada reserva requiere cliente, fecha y personas.
-
-- Cliente: entre 2 y 100 caracteres.
-- Fecha: día válido en formato AAAA-MM-DD.
-- Personas: entero entre 1 y 1000.
-- Solo se permite una reserva por fecha.
-- No se aceptan campos adicionales.
-
-Códigos principales: 400, 401, 404, 405, 409, 413, 415 y 422.
-
-Ejemplo de conflicto:
-
-```json
-{"error":{"code":"CONFLICT","message":"La fecha ya está reservada"}}
-```
-
-## Persistencia y sesiones
-
-Las reservas se guardan en reservas.sqlite y permanecen al reiniciar. Las sesiones duran 30 minutos, se almacenan en memoria y se invalidan al reiniciar.
-
-La cookie utiliza HttpOnly y SameSite=Strict. En producción se activa Secure y se requiere HTTPS.
-
-## Alcance
-
-Demostración académica local con un administrador. Para uso comercial se requieren usuarios, roles, limitación de intentos y almacenamiento persistente de sesiones. Los eventos SSE no se conservan para reproducirlos tras una desconexión.
+- Vue: https://vuejs.org/guide/components/props y https://vuejs.org/guide/components/events
+- Vite: https://vite.dev/config/server-options
+- PWA: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps

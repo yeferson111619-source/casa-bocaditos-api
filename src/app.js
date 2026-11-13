@@ -1,3 +1,5 @@
+import {readFileSync,existsSync} from 'node:fs';
+import {resolve,extname,sep} from 'node:path';
 import http from 'node:http';
 import {randomBytes, timingSafeEqual} from 'node:crypto';
 import {repository} from './repository.js';
@@ -25,6 +27,17 @@ export function createApp({dbPath='reservas.sqlite',token,secure=false}={}) {
   const server=http.createServer(async(req,res)=>{
     try {
       const path=new URL(req.url,'http://localhost').pathname, method=req.method;
+      if ((method==='GET'||method==='HEAD') && !path.startsWith('/api/')) {
+        const root=resolve('dist');
+        const file=resolve(root,'.'+(path==='/'?'/index.html':path));
+        const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.webmanifest':'application/manifest+json'};
+        if(file.startsWith(root+sep)&&mime[extname(file)]&&existsSync(file)) {
+          res.writeHead(200,{'Content-Type':mime[extname(file)],'Cache-Control':'no-cache','X-Content-Type-Options':'nosniff'});
+          return res.end(method==='HEAD'?undefined:readFileSync(file));
+        }
+        return fail(res,404,'NOT_FOUND','Recurso inexistente');
+      }
+
       const sid=/(?:^|;\s*)sid=([a-f0-9]{64})(?:;|$)/.exec(req.headers.cookie||'')?.[1];
       if(path==='/api/sesion'&&method==='POST') {
         const x=await body(req), value=typeof x?.token==='string'?Buffer.from(x.token):Buffer.alloc(0), expected=Buffer.from(token);

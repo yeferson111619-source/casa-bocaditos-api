@@ -1,0 +1,7 @@
+<script setup>
+import {reactive,watch} from 'vue';
+const props=defineProps({reserva:Object,busy:Boolean,online:Boolean});
+const emit=defineEmits(['save','cancel']);const form=reactive({cliente:'',fecha:'',personas:20});
+watch(()=>props.reserva,value=>Object.assign(form,value?{cliente:value.cliente,fecha:value.fecha,personas:value.personas}:{cliente:'',fecha:'',personas:20}),{immediate:true});
+</script>
+<template><section class="card"><span class="eyebrow">DETALLES DEL EVENTO</span><h2>{{reserva?'Editar reserva':'Nueva celebración'}}</h2><form @submit.prevent="emit('save',{cliente:form.cliente.trim(),fecha:form.fecha,personas:Number(form.personas)})"><fieldset :disabled="busy||!online"><label for="cliente">Nombre del cliente</label><input id="cliente" v-model="form.cliente" required minlength="2" maxlength="100" autocomplete="name" placeholder="Ej. Ana Pérez"><div class="form-row"><div><label for="fecha">Fecha del evento</label><input id="fecha" v-model="form.fecha" type="date" required></div><div><label for="personas">Invitados</label><input id="personas" v-model="form.personas" type="number" required min="1" max="1000" step="1"></div></div><p class="hint">Un equipo, una celebración por fecha.</p><div class="actions"><button>{{busy?'Guardando…':reserva?'Guardar cambios':'Crear reserva'}}</button><button v-if="reserva" type="button" class="light" @click="emit('cancel')">Cancelar</button></div></fieldset></form></section></template>

@@ -1,5 +1,5 @@
 {
-  "name": "casa-bocaditos-api",
+  "name": "casa-bocaditos-u3",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,6 +8,17 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "npm run build && node --test",
+    "dev": "vite",
+    "build": "vite build && node scripts/build-shell.js"
+  },
+  "dependencies": {
+    "vue": "^3.5.45",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.11",
+    "happy-dom": "^21.0.4",
+    "vite": "^7.3.8"
   }
 }
